@@ -1,0 +1,347 @@
+import { useForm } from '@tanstack/react-form'
+import Input from '../../component/input'
+import { Link, useLocation } from '@tanstack/react-router'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { CartResponse } from '../../utils/FormType'
+import { AppContextData } from '../../context/AppContext'
+import FormatPrice from '../../component/formatPrice'
+import { useMutation } from '@tanstack/react-query'
+import { CartApi } from '../../authentication/CartAuth'
+import { OderRequest } from '../../utils/FormRequest'
+import userApi from '../../authentication/UserApi'
+import { UserAndAddressResponse } from '../../utils/FormResponse'
+type FormData = {
+  street: string
+  commune: string
+  district: string
+  conscious: string
+}
+interface CartTotalPrice extends CartResponse {
+  checked: boolean
+}
+const CartOrder = () => {
+  const inputDiscount = useRef<HTMLInputElement>(null)
+  const { profile } = useContext(AppContextData)
+  const { state } = useLocation()
+  const [productData, setProductData] = useState<CartTotalPrice[]>([])
+  const [profileUser, setProfileUser] = useState<UserAndAddressResponse>()
+  const [discountCode, setDiscountCode] = useState<number>(0)
+  const [oderRequest, setOderRequest] = useState<OderRequest[]>([])
+  useEffect(() => {
+    if (profile?.id) {
+      userApi
+        .GetUserByUserId(profile.id)
+        .then((res) => {
+          if (res.data.data) {
+            setProfileUser(res.data.data)
+          }
+        })
+        .catch((err) => console.log(err))
+    }
+    if (state.__tempKey) {
+      setProductData(JSON.parse(state.__tempKey))
+    }
+  }, [])
+  const form = useForm<FormData>({
+    defaultValues: {
+      commune: '',
+      conscious: '',
+      district: '',
+      street: ''
+    },
+    onSubmit: ({ value }) => {
+      console.log(value)
+    }
+  })
+  const isMuationSale = useMutation({
+    mutationFn: (data: string) => CartApi.GetDiscountCode(data)
+  })
+  if (state.__tempKey) {
+    console.log(JSON.parse(state.__tempKey))
+  } else {
+    console.log('state.__tempKey is undefined')
+  }
+  const HandleInputDiscount = (event: React.FocusEvent<HTMLInputElement>) => {
+    const value = event.currentTarget.value.toUpperCase()
+    isMuationSale.mutate(event.currentTarget.value.toLowerCase(), {
+      onSuccess: (res) => {
+        console.log(res)
+        if (res.data.data?.rate) {
+          setDiscountCode(res.data.data.rate)
+          swal({
+            icon: 'success',
+            text: `Bạn đã áp dụng mã giảm giá ${value} thành công`,
+            title: 'Thông Báo'
+          })
+        } else {
+          setDiscountCode(0)
+          swal({
+            icon: 'error',
+            text: `Mã giảm giá ${value} không hợp lệ`,
+            title: 'Thông Báo'
+          })
+        }
+      },
+      onError: (err) => {
+        console.log(err)
+
+        swal({
+          icon: 'error',
+          title: err.message
+        })
+      }
+    })
+  }
+  const totalPrice = productData
+    .filter((item) => item.checked)
+    .reduce((total, item) => total + item.price * item.quantity, 0)
+  return (
+    <form
+      className='grid grid-cols-3 gap-10 px-5'
+      onSubmit={(e) => {
+        e.preventDefault(), e.stopPropagation(), form.handleSubmit()
+      }}
+    >
+      <div className='col-span-2'>
+        <div className='flex items-center'>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            fill='none'
+            viewBox='0 0 24 24'
+            strokeWidth={1.5}
+            stroke='currentColor'
+            className='size-6'
+          >
+            <path strokeLinecap='round' strokeLinejoin='round' d='M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z' />
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              d='M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z'
+            />
+          </svg>
+
+          <h1 className='font-bold text-xl ml-5'>ĐỊA CHỈ GIAO HÀNG</h1>
+        </div>
+        <div className='mt-5'>
+          <div className='flex justify-between w-[100%] gap-5'>
+            <div className='w-[50%]'>
+              <div className='uppercase text-sm font-bold'>họ tên</div>
+              <Input
+                className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+                value={profileUser?.fullName}
+                Filed={form.Field}
+                name=''
+              />
+            </div>
+            <div className='w-[50%]'>
+              <div className='uppercase text-sm font-bold'>email</div>
+              <Input
+                className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+                Filed={form.Field}
+                name=''
+                value={profileUser?.email}
+              />
+            </div>
+          </div>
+          <div className='mt-3'>
+            <div className='uppercase text-sm font-bold'>sđt</div>
+            <Input
+              className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+              Filed={form.Field}
+              name=''
+              value={profileUser?.phone ? String(profileUser.phone) : ''}
+            />
+          </div>
+          <div className='w-[100%] gap-5 mt-5 flex'>
+            <select
+              name=''
+              id=''
+              className='text-[#555555] w-[33.33%] px-3 py-2  outline-none border-[1px] border-[#a3a3a3] rounded-md appearance-none'
+            >
+              <option value=''>Chọn tỉnh / Thành phố</option>
+            </select>
+            <select
+              name=''
+              id=''
+              className='text-[#555555] w-[33.33%] px-3 py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md appearance-none'
+            >
+              <option value=''>Chọn quận huyện</option>
+            </select>
+            <select
+              name=''
+              id=''
+              className='text-[#555555] w-[33.33%] px-3 py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md appearance-none'
+            >
+              <option value=''>Chọn phường xã</option>
+            </select>
+          </div>
+          <div className='mt-3'>
+            <div className='uppercase text-sm font-bold'>địa chỉ</div>
+            <Input
+              className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+              Filed={form.Field}
+              name='street'
+              placeholder='Nhập địa chỉ'
+            />
+          </div>
+          <div className='mt-3'>
+            <div className='uppercase text-sm font-bold'>ghi chú</div>
+            <textarea
+              className='w-[100%] resize-none outline-none border-[1px] border-[#a3a3a3] p-2 h-[100px]'
+              name=''
+              id=''
+              placeholder='Nhập ghi chú của bạn'
+            ></textarea>
+          </div>
+        </div>
+        <div>
+          <div className='flex items-center'>
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              fill='none'
+              viewBox='0 0 24 24'
+              strokeWidth={1.5}
+              stroke='currentColor'
+              className='size-6'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                d='M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z'
+              />
+            </svg>
+            <h1 className='font-bold text-xl uppercase ml-5'>phương thức thanh toán</h1>
+          </div>
+          <div className='flex flex-col gap-3 mt-5'>
+            <label className='space-x-2 cursor-pointer'>
+              <input type='radio' name='option' />
+              <span>Thẻ ATM/Visa/Master/JCB/QR Pay qua VNPAY-QR</span>
+            </label>
+            <label className='space-x-2 cursor-pointer'>
+              <input type='radio' name='option' checked />
+              <span>Thanh toán khi nhận hàng (COD)</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <h1 className='font-bold  text-2xl mt-10'>GIỎ HÀNG</h1>
+          <div>
+            <table className='w-[100%]'>
+              <thead className='h-[50px] text-center'>
+                <tr>
+                  <th>Tên hàng</th>
+                  <th>giá</th>
+                  <th>số lượng</th>
+                  <th>tổng tiền</th>
+                </tr>
+              </thead>
+              <tbody className='text-center'>
+                {productData &&
+                  productData.map((item) => (
+                    <tr key={item.productId} className='h-[150px]'>
+                      <td className='w-[300px] text-left'>
+                        <div className='flex w-[100%]'>
+                          <div className='w-[200px] h-[130px] px-2 overflow-hidden'>
+                            <img className='w-[100%] ' src={item.image} alt='' />
+                          </div>
+                          <div>
+                            <h2>{item.name}</h2>
+                            <div>
+                              Kích thước: <span className='font-bold'>{item.size}</span>
+                            </div>
+                            <div>
+                              Màu Sắc: <span className='font-bold'>{item.color}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className='w-[100px]'>
+                        <div className='text-[#c92127] font-medium'>
+                          <FormatPrice
+                            value={item.flashSale ? item.price - (item.price * item.sale) / 100 : item.price}
+                          />
+                        </div>
+                        <div className='line-through text-[#737373]'>
+                          <FormatPrice value={item.price} />
+                        </div>
+                      </td>
+                      <td>{item.quantity}</td>
+                      <td>
+                        <span className='text-lg font-bold'>
+                          <FormatPrice
+                            value={item.flashSale ? item.price - (item.price * item.sale) / 100 : item.price}
+                          />
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div className='col-span-1 p-3'>
+        <h1 className='uppercase font-bold text-xl'>ĐƠn hàng</h1>
+        <div className='mt-5'>
+          <div className='text-xs uppercase font-medium'>mã phiếu giảm giá</div>
+          <div className='flex border-[1px] overflow-hidden border-[#a3a3a3] w-[100%] rounded-md mt-2'>
+            {/* <Input
+              Filed={form.Field}
+              name=''
+              classParent='flex-1'
+              className='flex-1 px-3 py-2 outline-none border-none '
+              placeholder='Nhập mã giảm giá'
+            /> */}
+            <div className='flex-1'>
+              <input
+                ref={inputDiscount}
+                onBlur={HandleInputDiscount}
+                className='flex-1 px-3 py-2 outline-none border-none uppercase'
+                placeholder='Nhập mã giảm giá'
+                aria-disabled
+              />
+            </div>
+            <button
+              type='button'
+              onClick={() => inputDiscount.current?.blur()}
+              className='px-3 py-2 uppercase text-white bg-[#c92127] flex-none'
+            >
+              áp dụng
+            </button>
+          </div>
+          <div className='border-y-[1px] border-dashed border-[#a3a3a3] py-3 space-y-2 mt-5'>
+            <div className='flex justify-between'>
+              <span>Tạm tính</span>
+              <span className='font-bold'>
+                <FormatPrice value={totalPrice} />
+              </span>
+            </div>
+            <div className='flex justify-between'>
+              <span>Phí vận chuyển</span>
+              <span className='font-bold'>0đ</span>
+            </div>
+            <div className='flex justify-between'>
+              <span>Mã giảm giá</span>
+              <span className='font-bold'>
+                - <FormatPrice value={(totalPrice * discountCode) / 100} />
+              </span>
+            </div>
+          </div>
+          <div className='py-3 border-b-[1px] border-dashed border-[#a3a3a3] '>
+            <div className='flex justify-between'>
+              <span>Tổng thanh toán</span>
+              <span className='text-xl font-bold text-[#c92127]'>
+                <FormatPrice value={totalPrice - (totalPrice * discountCode) / 100} />
+              </span>
+            </div>
+          </div>
+          <button className='w-[100%] py-2 uppercase bg-[#c92127] text-white rounded-md mt-5 font-medium'>
+            <Link className='px-3 w-[100%] flex justify-center'>Đặt hàng</Link>
+          </button>
+        </div>
+      </div>
+    </form>
+  )
+}
+
+export default CartOrder

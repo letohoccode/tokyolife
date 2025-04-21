@@ -1,0 +1,31 @@
+spring:
+  cache:
+    redis:
+      time-to-live: 600000
+    type: redis
+
+
+  datasource:
+    url: jdbc:mysql://localhost/clothes
+    username: root
+    password: 200124
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: mysql
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: lenguyento2k4@gmail.com
+    password: edvj igfg kpcq vmzw
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        timeout: 30000
