@@ -1,0 +1,3 @@
+cloudinary_gallery:
+  service: Cloudinary
+  folder: shopimage

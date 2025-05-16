@@ -1,0 +1,16 @@
+package com.example.shop_backend.request;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
+public class AddressUserRequest {
+    private String email;
+
+    private String street;
+    private String commune;
+    private String district;
+    private String conscious;
+
+}
