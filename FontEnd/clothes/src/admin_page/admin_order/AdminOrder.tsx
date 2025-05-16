@@ -1,6 +1,17 @@
-import { Link } from "@tanstack/react-router"
+import { Link } from '@tanstack/react-router'
+import { OrderApi } from '../../authentication/OrderApi'
+import { useQuery } from '@tanstack/react-query'
+import StatusBadge from '../../component/statusbadge'
+import { StatusType } from '../../component/statusbadge/StatusBadge'
 
 const AdminOrder = () => {
+  const { data } = useQuery({
+    queryKey: ['order'],
+    queryFn: () => OrderApi.GetAllListOrder(),
+    staleTime : 3,
+  })
+
+  console.log(data)
   return (
     <div>
       <div className='w-[100%] py-4 px-10 text-xl font-semibold capitalize shadow-lg'>quản lý đơn hàng</div>
@@ -16,28 +27,26 @@ const AdminOrder = () => {
             </tr>
           </thead>
           <tbody>
-            <tr className='h-[40px]'>
-              <td>67dsahdsakdhas66d8sads</td>
-              <td>Trần Đức Thịnh</td>
-              <td>20-02-2024</td>
-              <td>
-                <span   className='text-xs bg-green-300 px-2 py-1 rounded-md'>đã xác nhận</span>
-              </td>
-              <td>
-                <button type="button" className="px-2 py-1 bg-[#c92127] rounded-md">Xem</button>
-              </td>
-            </tr>
-            <tr className='h-[40px]'>
-              <td>67dsahdsakdhas66d8sads</td>
-              <td>Trần Đức Thịnh</td>
-              <td>20-02-2024</td>
-              <td>
-                <span className='text-xs bg-red-300 px-2 py-1 rounded-md'>đã xác nhận</span>
-              </td>
-              <td>
-                <Link to="/adminorderdetail/$orderId" params={{orderId : 'sdjsadasdsa'}} className="px-2 py-1 bg-[#c92127] rounded-md">Xem</Link>
-              </td>
-            </tr>
+            {data?.data.data?.data &&
+              data.data.data.data.map((item) => (
+                <tr key={item.id} className='h-[40px]'>
+                  <td>{item.id}</td>
+                  <td>{item.userName}</td>
+                  <td>{new Date(item.date).toLocaleDateString('en-GB')}</td>
+                  <td>
+                    <StatusBadge status={item.orderStatus as StatusType} />
+                  </td>
+                  <td>
+                    <Link
+                      to='/adminorderdetail/$orderId'
+                      params={{ orderId: item.id }}
+                      className='px-2 py-1 bg-[#c92127] rounded-md'
+                    >
+                      Xem
+                    </Link>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

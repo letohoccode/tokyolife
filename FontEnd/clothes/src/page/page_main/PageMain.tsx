@@ -105,8 +105,8 @@ const PageMain = () => {
                   y2='41.9177'
                   gradientUnits='userSpaceOnUse'
                 >
-                  <stop stop-color='#7A171B'></stop>
-                  <stop offset='1' stop-color='#D10007'></stop>
+                  <stop stopColor='#7A171B'></stop>
+                  <stop offset='1' stopColor='#D10007'></stop>
                 </linearGradient>
               </defs>
             </svg>
@@ -130,8 +130,8 @@ const PageMain = () => {
         </div>
 
         {DataFlashSale &&
-          DataFlashSale.data.map((value) => (
-            <div className='grid grid-cols-10 gap-3 mt-5'>
+          DataFlashSale.data.map((value,key) => (
+            <div className='grid grid-cols-10 gap-3 mt-5' key={key}>
               <Link
                 to='/productdetail/$productId'
                 params={{ productId: value.id }}
@@ -236,8 +236,8 @@ const PageMain = () => {
           <h1 className='text-2xl capitalize font-medium'>sản phẩm mới ra mắt</h1>
         </div>
         {DataNoFlashSale &&
-          DataNoFlashSale.data.map((value) => (
-            <div className='grid grid-cols-10 gap-3 mt-5'>
+          DataNoFlashSale.data.map((value,key) => (
+            <div className='grid grid-cols-10 gap-3 mt-5' key={key}>
               <Link
                 to='/productdetail/$productId'
                 params={{ productId: value.id }}

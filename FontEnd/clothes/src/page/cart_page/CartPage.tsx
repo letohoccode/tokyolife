@@ -85,7 +85,7 @@ const CartPage = () => {
 
   const total = totalPrice.reduce((sum, item) => {
     if (!item.checked) return sum
-    const itemTotal = item.flashSale ? (item.price * item.sale * item.quantity) / 100 : item.price * item.quantity
+    const itemTotal = item.flashSale ? (item.price - (item.price * item.sale) / 100) * item.quantity : item.price * item.quantity
     return sum + itemTotal
   }, 0)
   const totalPriceAll = JSON.stringify(totalPrice.filter((item) => item.checked))
@@ -138,7 +138,7 @@ const CartPage = () => {
                   {item.flashSale ? (
                     <td className='w-[100px]'>
                       <div className='text-[#c92127] font-medium'>
-                        <FormatPrice value={(item.price * item.sale) / 100} />
+                        <FormatPrice value={item.price - (item.price * item.sale) / 100} />
                       </div>
                       <div className='line-through text-[#737373]'>
                         <FormatPrice value={item.price} />
@@ -165,7 +165,7 @@ const CartPage = () => {
                     <div className='flex-col flex justify-between items-end h-[120px]'>
                       {item.flashSale ? (
                         <div className='text-lg font-bold'>
-                          <FormatPrice value={(item.price * item.sale * item.quantity) / 100} />
+                          <FormatPrice value={ item.price * item.quantity  -  ((item.price * item.sale * item.quantity) / 100)} />
                         </div>
                       ) : (
                         <div className='text-lg font-bold'>

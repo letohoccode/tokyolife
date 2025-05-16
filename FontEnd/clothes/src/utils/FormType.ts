@@ -1,13 +1,12 @@
-import { ProductListForm } from './Form'
 
-export type DataFormPage = {
+export type DataFormPage<T> = {
   number: number
   size: number
   totalPages: number
   totalElement: number
   first: boolean
   last: boolean
-  data: ProductListForm[]
+  data: T
 }
 export type ParamsFormPoduct = {
   page?: number

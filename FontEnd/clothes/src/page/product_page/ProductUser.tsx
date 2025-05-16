@@ -6,6 +6,7 @@ import { ProductApi } from '../../authentication/productApi'
 import { ParamsFormPoduct } from '../../utils/FormType'
 import { CategoryApi } from '../../authentication/Category'
 import { CategoryForm } from '../../utils/Form'
+import FormatPrice from '../../component/formatPrice'
 
 const ProductUser = () => {
   const { page, size, status, category, sort, sortType } = Route.useSearch()
@@ -30,7 +31,7 @@ const ProductUser = () => {
     sort,
     sortType
   }
-  const { data: DataProduct } = useQuery({
+  const { data: DataProduct ,refetch} = useQuery({
     queryKey: ['products'],
     queryFn: () => ProductApi.GetProductCategory(ProductStatusRequest)
   })
@@ -40,12 +41,13 @@ const ProductUser = () => {
       const newProductRequest = { ...ProductStatusRequest, category: id }
       Navigate({ to: '/product', search: newProductRequest })
       queryclient.invalidateQueries({ queryKey: ['products'] })
+      refetch()
     }
   }
   const HandleSelect = (value: React.SyntheticEvent<HTMLSelectElement, Event>) => {
     const dataSelect = value.currentTarget.value
     if (dataSelect != null) {
-      const newProductRequest = { ...ProductStatusRequest, sort: dataSelect }
+      const newProductRequest = { ...ProductStatusRequest, sort: dataSelect ,sortType: 'price'}
       Navigate({ to: '/product', search: newProductRequest })
       queryclient.invalidateQueries({ queryKey: ['products'] })
     }
@@ -88,26 +90,28 @@ const ProductUser = () => {
               onChange={HandleSelect}
             >
               <option value=''>sắp xếp theo</option>
-              <option value='DESC'>giá cao - thấp</option>
+              <option value='DESC' >giá cao - thấp</option>
               <option value='ASC'>Giá thấp - cao</option>
             </select>
           </div>
           <div className='grid grid-cols-5 gap-3'>
-            {[...Array(10)].map((value) => (
+            {DataProduct &&  DataProduct.data.data?.data.map((value) => (
               <Link
                 to='/productdetail/$productId'
-                params={{ productId: value }}
+                params={{ productId: value.id }}
                 className='col-span-1 border-[1px] border-[#cfcece] rounded-md overflow-hidden p-2 h-[400px] flex flex-col justify-between cursor-pointer'
               >
                 <div className='w-full h-[250px] overflow-hidden'>
                   <img
-                    src='https://tokyolife.vn/_next/image?url=https%3A%2F%2Fpm2ec.s3.amazonaws.com%2Fcms%2Fproducts%2FF7UVJ051M-018%2F90b47b9292144f3eb415b0a073dc5f84_thumbnail.jpg&w=1920&q=75'
+                    src={value.image}
                     alt=''
                   />
                 </div>
                 <div className=''>
-                  <span className='line-clamp-2'>Áo chống nắng SunStop UV Master F7UVJ051M</span>
-                  <div className='text-[#c92127] font-medium'>259,000d</div>
+                  <span className='line-clamp-2'>{value.productName}</span>
+                  <div className='text-[#c92127] font-medium'>
+                    <FormatPrice value={value.price} />
+                  </div>
                 </div>
               </Link>
             ))}

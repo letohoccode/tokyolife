@@ -1,6 +1,6 @@
 export type UserForm = {
     id ?: number
-    phone ?: number
+    phone ?: string
     email ?: string
     fullName ?: string
     role ?: string

@@ -8,14 +8,7 @@ export type LoginForm = {
   email: string
   password: string
 }
-export type OrderDetail = {
-  id: string
-  totalPrice: string
-  totalItem: string
-  orderStatus: string
-  date: string
-  userName?: string
-}
+
 export type ProductSize = {
   color: string
   size: string

@@ -7,6 +7,7 @@ type ButtonType = {
   }) => React.ReactNode
   className?: string
   name?: string
+  disable ?: boolean
 }
 const Button = (props: ButtonType) => {
   return (
@@ -14,7 +15,7 @@ const Button = (props: ButtonType) => {
       selector={(state) => [state.canSubmit, state.isSubmitting]}
       children={([canSubmit, isSubmitting]) => (
         <>
-          <button className={props.className} type='submit' disabled={!canSubmit}>
+          <button  className={props.className} type='submit' disabled={!canSubmit}>
             {isSubmitting ? props.name : props.name}
           </button>
         </>

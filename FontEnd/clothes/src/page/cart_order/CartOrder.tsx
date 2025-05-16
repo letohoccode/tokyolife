@@ -1,21 +1,18 @@
 import { useForm } from '@tanstack/react-form'
 import Input from '../../component/input'
-import { Link, useLocation } from '@tanstack/react-router'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { CartResponse } from '../../utils/FormType'
 import { AppContextData } from '../../context/AppContext'
 import FormatPrice from '../../component/formatPrice'
 import { useMutation } from '@tanstack/react-query'
 import { CartApi } from '../../authentication/CartAuth'
-import { OderRequest } from '../../utils/FormRequest'
+import { AddressRequest, OderRequest, UserAddressRequest } from '../../utils/FormRequest'
 import userApi from '../../authentication/UserApi'
 import { UserAndAddressResponse } from '../../utils/FormResponse'
-type FormData = {
-  street: string
-  commune: string
-  district: string
-  conscious: string
-}
+import Button from '../../component/button'
+import { OrderApi } from '../../authentication/OrderApi'
+
 interface CartTotalPrice extends CartResponse {
   checked: boolean
 }
@@ -26,31 +23,89 @@ const CartOrder = () => {
   const [productData, setProductData] = useState<CartTotalPrice[]>([])
   const [profileUser, setProfileUser] = useState<UserAndAddressResponse>()
   const [discountCode, setDiscountCode] = useState<number>(0)
-  const [oderRequest, setOderRequest] = useState<OderRequest[]>([])
+  const [oderRequest, setOderRequest] = useState<OderRequest>()
+  const navigate = useNavigate()
   useEffect(() => {
+    if (state.__tempKey) {
+      setProductData(JSON.parse(state.__tempKey))
+    }
     if (profile?.id) {
       userApi
-        .GetUserByUserId(profile.id)
+        .GetUserByUserId({ userId: profile.id })
         .then((res) => {
           if (res.data.data) {
             setProfileUser(res.data.data)
           }
         })
         .catch((err) => console.log(err))
+      setOderRequest({
+        userId: profile.id,
+        totalItems: productData.length,
+        totalPrice: 0,
+        comment: '',
+        orderItemRequests: productData.map((item) => ({
+          productId: item.productId,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity
+        })),
+      })
     }
-    if (state.__tempKey) {
-      setProductData(JSON.parse(state.__tempKey))
-    }
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const form = useForm<FormData>({
+  const form = useForm<UserAddressRequest>({
     defaultValues: {
       commune: '',
       conscious: '',
       district: '',
-      street: ''
+      street: '',
+      comment: ''
     },
-    onSubmit: ({ value }) => {
+    onSubmit: async ({ value }) => {
       console.log(value)
+      const addressUser: AddressRequest = {
+        street: value.street,
+        commune: value.commune,
+        district: value.district,
+        conscious: value.conscious,
+        email: String(profileUser?.email)
+      }
+      setOderRequest((order) => {
+        if (order) {
+          return {
+            ...order,
+            totalPrice: Number(totalPrice) - (Number(totalPrice) * discountCode) / 100,
+            comment: value.comment
+          }
+        }
+        return order
+      })
+
+      try {
+        await userApi.UpdateAddress(addressUser)
+      } catch (error) {
+        console.log(error)
+      }
+      try {
+        if (oderRequest) {
+          const resultOrder = await OrderApi.createOrderApi(oderRequest)
+          swal({
+            icon: 'success',
+            text: `Đặt hàng thành công`,
+            title: 'Thông Báo'
+          })
+          navigate({
+            to: "/product",
+            search: {
+              status: false
+            }
+          })
+          console.log(resultOrder.data.message)
+        }
+      } catch (error) {
+        console.log(error)
+      }
     }
   })
   const isMuationSale = useMutation({
@@ -92,9 +147,15 @@ const CartOrder = () => {
       }
     })
   }
+  console.log(profileUser)
   const totalPrice = productData
     .filter((item) => item.checked)
-    .reduce((total, item) => total + item.price * item.quantity, 0)
+    .reduce((total, item) => {
+      if (item.flashSale) {
+        return total + (item.price - (item.price * item.sale) / 100) * item.quantity
+      }
+      return total + item.price * item.quantity
+    }, 0)
   return (
     <form
       className='grid grid-cols-3 gap-10 px-5'
@@ -130,6 +191,7 @@ const CartOrder = () => {
                 className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
                 value={profileUser?.fullName}
                 Filed={form.Field}
+                disable
                 name=''
               />
             </div>
@@ -139,41 +201,44 @@ const CartOrder = () => {
                 className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
                 Filed={form.Field}
                 name=''
-                value={profileUser?.email}
+                disable
+                value={String(profileUser?.email)}
               />
             </div>
           </div>
           <div className='mt-3'>
             <div className='uppercase text-sm font-bold'>sđt</div>
             <Input
+              type='number'
               className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
               Filed={form.Field}
               name=''
+              disable
               value={profileUser?.phone ? String(profileUser.phone) : ''}
             />
           </div>
-          <div className='w-[100%] gap-5 mt-5 flex'>
-            <select
-              name=''
-              id=''
-              className='text-[#555555] w-[33.33%] px-3 py-2  outline-none border-[1px] border-[#a3a3a3] rounded-md appearance-none'
-            >
-              <option value=''>Chọn tỉnh / Thành phố</option>
-            </select>
-            <select
-              name=''
-              id=''
-              className='text-[#555555] w-[33.33%] px-3 py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md appearance-none'
-            >
-              <option value=''>Chọn quận huyện</option>
-            </select>
-            <select
-              name=''
-              id=''
-              className='text-[#555555] w-[33.33%] px-3 py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md appearance-none'
-            >
-              <option value=''>Chọn phường xã</option>
-            </select>
+          <div className='w-[100%] gap-5 mt-5 flex justify-between'>
+            <Input
+              Filed={form.Field}
+              name='conscious'
+              value={profileUser?.addresses?.conscious}
+              className='px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+              placeholder='Nhập tỉnh thành phố'
+            />
+            <Input
+              Filed={form.Field}
+              name='district'
+              value={profileUser?.addresses?.district}
+              className=' px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+              placeholder='Nhập tỉnh thành phố'
+            />
+            <Input
+              Filed={form.Field}
+              name='commune'
+              value={profileUser?.addresses?.commune}
+              className=' px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
+              placeholder='Nhập tỉnh thành phố'
+            />
           </div>
           <div className='mt-3'>
             <div className='uppercase text-sm font-bold'>địa chỉ</div>
@@ -181,18 +246,23 @@ const CartOrder = () => {
               className='w-[100%] px-3 text-[#555555] py-2 outline-none border-[1px] border-[#a3a3a3] rounded-md mt-2'
               Filed={form.Field}
               name='street'
+              value={profileUser?.addresses?.street}
               placeholder='Nhập địa chỉ'
             />
           </div>
-          <div className='mt-3'>
-            <div className='uppercase text-sm font-bold'>ghi chú</div>
-            <textarea
-              className='w-[100%] resize-none outline-none border-[1px] border-[#a3a3a3] p-2 h-[100px]'
-              name=''
-              id=''
-              placeholder='Nhập ghi chú của bạn'
-            ></textarea>
-          </div>
+          <form.Field name='comment'>
+            {(field) => (
+              <div className='mt-3'>
+                <div className='uppercase text-sm font-bold'>ghi chú</div>
+                <textarea
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  className='w-[100%] resize-none outline-none border-[1px] border-[#a3a3a3] p-2 h-[100px]'
+                  name={field.name}
+                  placeholder='Nhập ghi chú của bạn'
+                ></textarea>
+              </div>
+            )}
+          </form.Field>
         </div>
         <div>
           <div className='flex items-center'>
@@ -285,13 +355,6 @@ const CartOrder = () => {
         <div className='mt-5'>
           <div className='text-xs uppercase font-medium'>mã phiếu giảm giá</div>
           <div className='flex border-[1px] overflow-hidden border-[#a3a3a3] w-[100%] rounded-md mt-2'>
-            {/* <Input
-              Filed={form.Field}
-              name=''
-              classParent='flex-1'
-              className='flex-1 px-3 py-2 outline-none border-none '
-              placeholder='Nhập mã giảm giá'
-            /> */}
             <div className='flex-1'>
               <input
                 ref={inputDiscount}
@@ -336,7 +399,7 @@ const CartOrder = () => {
             </div>
           </div>
           <button className='w-[100%] py-2 uppercase bg-[#c92127] text-white rounded-md mt-5 font-medium'>
-            <Link className='px-3 w-[100%] flex justify-center'>Đặt hàng</Link>
+            <Button Subscribe={form.Subscribe} name='Đặt Hàng' className='px-3 w-[100%] flex justify-center' />
           </button>
         </div>
       </div>

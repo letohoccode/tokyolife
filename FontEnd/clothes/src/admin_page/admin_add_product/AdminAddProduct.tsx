@@ -5,9 +5,9 @@ import { useForm } from '@tanstack/react-form'
 import { ProductFormAdd, ProductSize } from '../../utils/Form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ProductApi } from '../../authentication/productApi'
-import axios from 'axios'
 import { AppContextData } from '../../context/AppContext'
 import { CategoryApi } from '../../authentication/Category'
+import { ImageApi } from '../../authentication/imageApi'
 type FormData = {
   productName: string
   title: string
@@ -63,20 +63,13 @@ const AdminAddProduct = () => {
         userId: profile?.id,
         files: []
       }
-      console.log(data)
-      await axios({
-        url: 'http://localhost:8080/api/image/',
-        method: 'POST',
-        headers: {
-          'Content-Type': ''
-        },
-        data: formList
-      }).then((response) => {
-        console.log(response.data)
-        data.files = response.data.data
-      })
-      console.log(data)
-
+      try {
+        const result = await ImageApi.upLoadListImages(formList)
+        data.files = result.data.data
+      } catch (error) {
+        console.log(error)
+      }
+      console.log('data', data)
       await isProductApi.mutate(data, {
         onSuccess: (data) => {
           console.log(data)
