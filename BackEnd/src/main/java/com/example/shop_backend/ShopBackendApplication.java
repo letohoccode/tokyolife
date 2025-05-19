@@ -31,8 +31,8 @@ public class ShopBackendApplication implements CommandLineRunner{
 		if (user1 == null)
 		{
 			User user = new User();
-			user.setEmail("letoadmin@gmail.com");
-			user.setPassword(passwordEncoder.encode("leto2004"));
+			user.setEmail("admin@gmail.com");
+			user.setPassword(passwordEncoder.encode("admin123"));
 			user.setEnable(true);
 			user.setBlocked(true);
 			user.setRoles(UserRoles.ADMIN);

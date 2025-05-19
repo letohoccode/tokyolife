@@ -12,8 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashMap;
-import java.util.Map;
+
 
 @Configuration
 public class Beans {
@@ -45,8 +44,8 @@ public class Beans {
     {
         return new Cloudinary(ObjectUtils.asMap(
                 "cloud_name","dljszdnpd",
-                "api_key","856379287635873",
-                "api_secret","p4in8J7djvjXUQ6W5olWRXV1uxA",
+                "api_key","***",
+                "api_secret","***",
                 "secure",true
         ));
     }
